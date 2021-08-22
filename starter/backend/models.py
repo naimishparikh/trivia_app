@@ -3,8 +3,14 @@ from sqlalchemy import Column, String, Integer, create_engine
 from flask_sqlalchemy import SQLAlchemy
 import json
 
-database_name = "trivia"
-database_path = "postgres://{}/{}".format('localhost:5432', database_name)
+DATABASE_NAME = "trivia"
+username = 'postgres'
+password = '1234'
+url = 'localhost:5432'
+dialects = 'postgresql'
+SQLALCHEMY_DATABASE_URI = "{}://{}:{}@{}/{}".format(
+  dialects, username, password, url, DATABASE_NAME)
+#database_path = "postgresql://{}/{}".format('localhost:5432', database_name)
 
 db = SQLAlchemy()
 
@@ -12,7 +18,7 @@ db = SQLAlchemy()
 setup_db(app)
     binds a flask application and a SQLAlchemy service
 '''
-def setup_db(app, database_path=database_path):
+def setup_db(app, database_path=SQLALCHEMY_DATABASE_URI):
     app.config["SQLALCHEMY_DATABASE_URI"] = database_path
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.app = app
@@ -29,8 +35,9 @@ class Question(db.Model):
   id = Column(Integer, primary_key=True)
   question = Column(String)
   answer = Column(String)
-  category = Column(String)
+  category = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
   difficulty = Column(Integer)
+
 
   def __init__(self, question, answer, category, difficulty):
     self.question = question
@@ -67,6 +74,7 @@ class Category(db.Model):
 
   id = Column(Integer, primary_key=True)
   type = Column(String)
+  ques = db.relationship('Question', backref='cat', lazy=True)
 
   def __init__(self, type):
     self.type = type
