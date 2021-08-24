@@ -69,7 +69,7 @@ class QuizView extends Component {
           forceEnd:(Object.keys(result.question).length == 0)
           //(result.question)?false : true
         })
-        alert("forceEnd " + Object.keys(result.question).length);
+        //alert("forceEnd " + Object.keys(result.question).length);
         return;
       },
       error: (error) => {

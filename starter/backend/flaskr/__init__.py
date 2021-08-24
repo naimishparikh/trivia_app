@@ -69,12 +69,14 @@ def create_app(test_config=None):
                 cats[category.id] = category.type
 
             print("cats",cats)
-            return jsonify({
+            json = jsonify({
               'success': True,
               'questions': current_ques,
               'total_questions': len(Question.query.all()),
               'categories': cats
                })
+            print("printing json" , json)
+            return json
 
         except:
             print("in except abort")
@@ -108,6 +110,7 @@ def create_app(test_config=None):
     @app.route('/questions', methods=['POST'])
     def create_question():
         try:
+            print("in create question")
             body = request.get_json()
 
             ques = body.get('question', None)
@@ -115,13 +118,19 @@ def create_app(test_config=None):
             difficulty = body.get('difficulty', None)
             category = body.get('category', None)
 
-            if ques == None or answer == None or difficulty==None or category==None:
+            # STANDOUT submission rating
+            rating = body.get('rating', None)
+
+            print("rating ", rating)
+            if ques == None or answer == None or difficulty==None or category==None or rating==None:
                 abort(422)
 
             print("in question creation")
-            question = Question(question=ques, answer=answer, difficulty=difficulty, category=category)
-            question.insert()
+            question = Question(question=ques, answer=answer, difficulty=difficulty, category=category,rating=rating)
+            print("in question creaTED")
 
+            question.insert()
+            print("in question INSERTED")
             return jsonify({
                'success': True,
                'created': question.id,
@@ -135,6 +144,7 @@ def create_app(test_config=None):
     @app.route('/questions_search', methods=['POST'])
     def search_questions():
         try:
+            print("in search questions")
             body = request.get_json()
 
             search = body.get('searchTerm', "")
@@ -229,6 +239,33 @@ def create_app(test_config=None):
         except:
             abort(422)
 
+
+    #STANDOUT Submission
+    @app.route('/categories', methods=['POST'])
+    def create_category():
+        try:
+            body = request.get_json()
+
+            categoryName = body.get('categoryName', None)
+
+            print("CAtegory Name ", categoryName)
+            if categoryName == None:
+                abort(422)
+
+            print("in Category creation")
+            cat = Category(type=categoryName)
+            print("categoryCreated")
+            cat.insert()
+            print("category inserted")
+
+            return jsonify({
+               'success': True,
+               'created': cat.id
+        #  'books': current_books,
+        #  'total_books': len(Book.query.all())
+            })
+        except:
+            abort(422)
 
     @app.errorhandler(404)
     def not_found(error):

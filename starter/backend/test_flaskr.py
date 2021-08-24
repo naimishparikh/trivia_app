@@ -25,7 +25,8 @@ class TriviaTestCase(unittest.TestCase):
             'question' : "Where?",
             'answer' : 'here',
             'difficulty' : 3,
-            'category' : 2
+            'rating': 4,
+            'category' : 8
         }
 
         # binds the app to the current context
@@ -148,6 +149,22 @@ class TriviaTestCase(unittest.TestCase):
 
     def test_quiz_failure(self):
         res = self.client().post('/quizzes', json = {'quiz_category' : {'type': 'Empty', 'id': '900'}})
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 422)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'unprocessable')
+
+
+    def test_create_new_category(self):
+        res = self.client().post('/categories', json={'categoryName': 'Temp'})
+        data = json.loads(res.data)
+
+        self.assertEqual(data['success'], True)
+        self.assertTrue(data['created'])
+
+    def test_create_new_category_failure(self):
+        res = self.client().post('/categories')
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 422)
