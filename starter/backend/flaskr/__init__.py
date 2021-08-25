@@ -20,24 +20,24 @@ def create_app(test_config=None):
     # CORS Headers
     @app.after_request
     def after_request(response):
-        print("After Request")
         response.headers.add('Access-Control-Allow-Origin', '*')
         response.headers.add('Access-Control-Allow-Headers',
                              'Content-Type,Authorization,true')
         response.headers.add('Access-Control-Allow-Methods',
                              'GET,PUT,POST,DELETE,OPTIONS')
-        print("done after request")
         return response
 
+    # gets the questions per page based on the given page number
     def paginate_questions(request, selection):
         page = request.args.get('page', 1, type=int)
         start = (page - 1) * QUESTIONS_PER_PAGE
         end = start + QUESTIONS_PER_PAGE
-
         questions = [ques.format() for ques in selection]
         current_ques = questions[start:end]
         return current_ques
 
+    # gets all categories ordered by category id.
+    # format is for e.g. { 3:"Art"}
     @app.route('/categories')
     def retrieve_categories():
         categories = Category.query.order_by(Category.id).all()
@@ -45,20 +45,20 @@ def create_app(test_config=None):
         for category in categories:
             cats[category.id] = category.type
 
-        print("categories", cats)
         return jsonify({
                  'success': True,
                  'categories': cats
                })
 
+    # get all questions ordered by question id for given page. also returns all
+    # categories and total number of questions. questions are paginated. by
+    # default page is the first page if page not provided in the request
+    # categories are returned in the format { 1:"Art", 2:"History"}
     @app.route('/questions')
     def retrieve_questions():
         try:
             selection = Question.query.order_by(Question.id).all()
-            print("selection  length and type",
-                  len(selection), type(selection))
             current_ques = paginate_questions(request, selection)
-            print("current_ques", current_ques)
             if len(current_ques) == 0:
                 abort(404)
 
@@ -68,29 +68,27 @@ def create_app(test_config=None):
             for category in categories:
                 cats[category.id] = category.type
 
-            print("cats", cats)
             json = jsonify({
               'success': True,
               'questions': current_ques,
               'total_questions': len(Question.query.all()),
               'categories': cats
                })
-            print("printing json", json)
             return json
 
         except:
-            print("in except abort")
             abort(422)
 
+    # delete the question with given question id. returns the successfully
+    # deleted question id
     @app.route('/questions/<int:question_id>', methods=['DELETE'])
     def delete_book(question_id):
         try:
-            print("In DELETE")
+
             question = Question.query.filter(Question.id ==
                                              question_id).one_or_none()
 
             if question is None:
-                print("in delete none")
                 abort(404)
 
             question.delete()
@@ -102,13 +100,12 @@ def create_app(test_config=None):
                 #  'total_books': len(Book.query.all())
             })
         except:
-            print("in except abort")
             abort(422)
 
+    # create a new question based on the  given question info in  the request
     @app.route('/questions', methods=['POST'])
     def create_question():
         try:
-            print("in create question")
             body = request.get_json()
 
             ques = body.get('question', None)
@@ -119,7 +116,6 @@ def create_app(test_config=None):
             # STANDOUT submission rating
             rating = body.get('rating', None)
 
-            print("rating ", rating)
             if ques is None or \
                answer is None or\
                difficulty is None or \
@@ -127,16 +123,13 @@ def create_app(test_config=None):
                rating is None:
                 abort(422)
 
-            print("in question creation")
             question = Question(question=ques,
                                 answer=answer,
                                 difficulty=difficulty,
                                 category=category,
                                 rating=rating)
-            print("in question created")
 
             question.insert()
-            print("in question INSERTED")
             return jsonify({
                'success': True,
                'created': question.id
@@ -146,19 +139,18 @@ def create_app(test_config=None):
         except:
             abort(422)
 
+    # search for questions with given search term. returns all
+    # matching questions with given search term.
     @app.route('/questions_search', methods=['POST'])
     def search_questions():
         try:
-            print("in search questions")
             body = request.get_json()
 
             search = body.get('searchTerm', "")
 
-            print("search term", search, "searchTerm")
             selection = Question.query.order_by(Question.id).\
                 filter(Question.question.ilike('%{}%'.format(search)))
             current_ques = paginate_questions(request, selection)
-            print("current questions in search", current_ques)
 
             return jsonify({
                 'success': True,
@@ -168,17 +160,16 @@ def create_app(test_config=None):
         except:
             abort(422)
 
+    # get the questions with the given category id.
+    # returns paginated questions
     @app.route('/categories/<int:cat_id>/questions')
     def retrieve_questions_by_category(cat_id):
         try:
             questions = Question.query.filter_by(category=cat_id)
             current_ques = paginate_questions(request, questions)
-            print("in retrieve by category")
             if len(current_ques) == 0:
                 abort(404)
 
-            print("QUESTIONS", questions)
-            print("Current_Ques", current_ques)
             return jsonify({
                 'success': True,
                 'questions': current_ques,
@@ -186,9 +177,12 @@ def create_app(test_config=None):
                 'current_category': cat_id
             })
         except:
-            print("in except abort")
             abort(422)
 
+    # gets a random question with the given category id if the question is
+    # not in the given previous questions. previous questions is a list.
+    # and category is of the form {'type': 'History', 'id': '4'}
+    # returns the current quiz question which is randomly selected.
     @app.route('/quizzes', methods=['POST'])
     def quizzes():
         try:
@@ -197,44 +191,49 @@ def create_app(test_config=None):
             prevQuestions = body.get('previous_questions', [])
             quiz_category = body.get('quiz_category', {})
 
-            print("quiz category", quiz_category)
-            print("prevQuestion", prevQuestions)
             cat_id = quiz_category['id']
-            print("cat_id", cat_id)
+
+            # category id of 0 means all questions else questions from the
+            # given category id.
             if cat_id == 0:
-                print("In if cat_id")
                 selection = Question.query.order_by(Question.id)
             else:
-                print("In else cat_id")
                 selection = Question.query.order_by(Question.id).\
                     filter_by(category=cat_id)
 
             selLength = len(selection.all())
 
             if selLength == 0:
-                print("selLength", selLength)
                 abort(422)
 
             current_question = {}
             allQuestions = set()
+
+            # loop until we find a question not present in previous
+            # questions list or we looped through all questions and they are
+            # all present in previous questions. if all questions are covered
+            # return empty current_questions dictionary.
+            # the current_question is returned in the format as per the format()
+            # method of the Question class in model
             while len(allQuestions) < selLength:
-                print("selection", selection[0])
-                print("selectionEnd", selection[selLength-1])
+
+                # get a random integer between 0 and selLength-1
+                # both included.
+                # random integer is the index of the questions list from
+                # the selection query above.
                 randInteger = random.randint(0, selLength-1)
-                print("randInteger index", randInteger)
+
                 current_question = selection[randInteger].format()
-                print("current_question", current_question)
+
+                # save the current question in allQuestions set
+                # before checking if the randomly selected question
+                # is present in the previous questions.
                 allQuestions.add(current_question['id'])
-                print("after all questions add ", current_question['id'])
-                print("all Questions ", allQuestions)
+
                 if current_question['id'] not in prevQuestions:
-                    print("not in PrevQuestion")
                     break
             else:
-                print("current question empty")
                 current_question = {}
-
-            print("CURRENT QUESTION", current_question)
 
             return jsonify({
                 'success': True,
@@ -244,6 +243,7 @@ def create_app(test_config=None):
             abort(422)
 
     # STANDOUT Submission
+    # create a new category in the database with the given category name
     @app.route('/categories', methods=['POST'])
     def create_category():
         try:
@@ -251,15 +251,11 @@ def create_app(test_config=None):
 
             categoryName = body.get('categoryName', None)
 
-            print("Category Name ", categoryName)
             if categoryName is None:
                 abort(422)
 
-            print("in Category creation")
             cat = Category(type=categoryName)
-            print("categoryCreated")
             cat.insert()
-            print("category inserted")
 
             return jsonify({
                'success': True,
@@ -272,7 +268,6 @@ def create_app(test_config=None):
 
     @app.errorhandler(404)
     def not_found(error):
-        print("In abort 404")
         return jsonify({
           "success": False,
           "error": 404,
@@ -281,7 +276,6 @@ def create_app(test_config=None):
 
     @app.errorhandler(422)
     def unprocessable(error):
-        print("returning unprocessable")
         return jsonify({
           "success": False,
           "error": 422,
@@ -298,7 +292,6 @@ def create_app(test_config=None):
 
     @app.errorhandler(405)
     def not_allowed(error):
-        print("405 not allowed")
         return jsonify({
           "success": False,
           "error": 405,
@@ -307,7 +300,7 @@ def create_app(test_config=None):
 
     @app.errorhandler(500)
     def internal_server_error(error):
-        print("500 internal server error")
+
         return jsonify({
           "success": False,
           "error": 500,
@@ -316,7 +309,6 @@ def create_app(test_config=None):
 
     @app.errorhandler(501)
     def not_implemented(error):
-        print("501 not implemented")
         return jsonify({
             "success": False,
             "error": 501,
@@ -325,7 +317,6 @@ def create_app(test_config=None):
 
     @app.errorhandler(502)
     def bad_gateway(error):
-        print("502 bad gateway")
         return jsonify({
             "success": False,
             "error": 502,
@@ -334,7 +325,6 @@ def create_app(test_config=None):
 
     @app.errorhandler(503)
     def service_unavailable(error):
-        print("503 service unavailable")
         return jsonify({
             "success": False,
             "error": 503,
@@ -343,7 +333,6 @@ def create_app(test_config=None):
 
     @app.errorhandler(504)
     def gateway_timeout(error):
-        print("504 gateway timeout")
         return jsonify({
             "success": False,
             "error": 504,
@@ -352,7 +341,6 @@ def create_app(test_config=None):
 
     @app.errorhandler(505)
     def http_version_unsupported(error):
-        print("505 http version unsupported")
         return jsonify({
             "success": False,
             "error": 505,
