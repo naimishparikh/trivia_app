@@ -135,7 +135,7 @@ COPY public.questions (id, question, answer, difficulty, category, rating) FROM 
 12	Who invented Peanut Butter?	George Washington Carver	2	4	5
 13	What is the largest lake in Africa?	Lake Victoria	2	3	5
 14	In which royal palace would you find the Hall of Mirrors?	The Palace of Versailles	3	3	5
-15	The Taj Mahal is located in which Indian city?	Agra	2	3
+15	The Taj Mahal is located in which Indian city?	Agra	2	3	5
 16	Which Dutch graphic artist–initials M C was a creator of optical illusions?	Escher	1	2	5
 17	La Giaconda is better known as what?	Mona Lisa	3	2	5
 18	How many paintings did Van Gogh sell in his lifetime?	One	4	2	5

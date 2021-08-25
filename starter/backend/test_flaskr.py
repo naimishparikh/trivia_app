@@ -26,7 +26,7 @@ class TriviaTestCase(unittest.TestCase):
             'answer' : 'here',
             'difficulty' : 3,
             'rating': 4,
-            'category' : 8
+            'category' : 2
         }
 
         # binds the app to the current context
@@ -53,6 +53,13 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertTrue(len(data['categories']))
 
+    def test_get_categories_failure(self):
+        res = self.client().get('/categorie')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'resource not found')
 
     def test_get_questions(self):
         res = self.client().get('/questions?page=1')
@@ -76,12 +83,12 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['message'], 'unprocessable')
 
     def test_delete_question(self):
-        res = self.client().delete('/questions/33')
+        res = self.client().delete('/questions/22')
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
-        self.assertEqual(data['deleted'], 33)
+        self.assertEqual(data['deleted'], 22)
 
 
     def test_422_if_question_does_not_exist(self):
@@ -117,6 +124,13 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data['total_questions'])
         self.assertTrue(len(data['questions']))
 
+    def test_search_questions_failure(self):
+        res = self.client().post('/questions_searc', json = {'searchTerm':'Tom'})
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
+        self.assertEqual(data['message'], 'resource not found')
 
     def test_retrieve_questions_by_category(self):
         res = self.client().get('/categories/3/questions')

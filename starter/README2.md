@@ -16,6 +16,11 @@
        npm start
 - All the endpoint test cases are available in ./trivia/trivia_app/starter/backend/test_flaskr.py . how to run the tests
        python ./trivia/trivia_app/starter/backend/test_flaskr.py 
+- Creating the database
+       dropdb -Upostgres trivia
+       createdb -Upostgres trivia
+       psql trivia < trivia.psql
+       
 
 ### Error Handling
 Errors are returned as JSON objects in the following format:
